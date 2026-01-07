@@ -19,7 +19,7 @@ function validarIngreso(cedula) {
   const hoja = ss.getSheetByName(HOJA_MAESTRA);
   const datos = hoja.getRange("A2:M" + hoja.getLastRow()).getValues();
   const usuario = datos.find(f => String(f[0]) === String(cedula));
-  
+
   if (usuario) {
     return {
       cedula: usuario[0], nombre: usuario[1], sexo: usuario[2],
@@ -51,13 +51,90 @@ function obtenerCodigoUniforme(prenda, talla) {
 }
 
 function guardarPedidoMasivo(carrito, user) {
-  const hoja = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(HOJA_SOLICITUD);
+  const ss = SpreadsheetApp.getActiveSpreadsheet();
+  const hoja = ss.getSheetByName(HOJA_SOLICITUD);
   const fecha = new Date();
+  const correoUsuario = Session.getActiveUser().getEmail(); // Obtiene el correo de quien usa la App
+
   const filas = carrito.map(item => [
-    fecha, "", user.cedula, user.nombre, user.sexo, user.cargo, user.ceco, item.codigo, item.prenda, item.talla
+    fecha,
+    correoUsuario,
+    user.cedula,
+    user.nombre,
+    user.sexo,
+    user.cargo,
+    user.ceco,
+    item.codigo,
+    item.prenda,
+    item.talla
   ]);
+
   hoja.getRange(hoja.getLastRow() + 1, 1, filas.length, 10).setValues(filas);
-  return "✅ ¡Pedido enviado con éxito!";
+
+  enviarCorreoConfirmacion(carrito, user, correoUsuario, fecha);
+
+  return "✅ ¡Pedido enviado con éxito! Se ha enviado un resumen a: " + correoUsuario;
+}
+
+/**
+ * Función auxiliar para construir y enviar el email
+ */
+function enviarCorreoConfirmacion(carrito, user, email, fecha) {
+  const fechaTxt = Utilities.formatDate(fecha, Session.getScriptTimeZone(), "dd/MM/yyyy HH:mm");
+
+  // Construcción del diseño del correo en HTML
+  let tablaArticulos = `
+    <table style="border-collapse: collapse; width: 100%; font-family: sans-serif;">
+      <thead>
+        <tr style="background-color: #007bff; color: white;">
+          <th style="padding: 10px; border: 1px solid #ddd;">Prenda</th>
+          <th style="padding: 10px; border: 1px solid #ddd;">Talla</th>
+          <th style="padding: 10px; border: 1px solid #ddd;">Código</th>
+        </tr>
+      </thead>
+      <tbody>`;
+
+  carrito.forEach(item => {
+    tablaArticulos += `
+      <tr>
+        <td style="padding: 10px; border: 1px solid #ddd;">${item.prenda}</td>
+        <td style="padding: 10px; border: 1px solid #ddd; text-align: center;">${item.talla}</td>
+        <td style="padding: 10px; border: 1px solid #ddd; text-align: center;">${item.codigo}</td>
+      </tr>`;
+  });
+
+  tablaArticulos += `</tbody></table>`;
+
+  const cuerpoHtml = `
+    <div style="font-family: sans-serif; color: #333; max-width: 600px; border: 1px solid #eee; padding: 20px; border-radius: 10px;">
+      <h2 style="color: #00A441;">Confirmación de Solicitud de Uniformes</h2>
+      <p>Hola <strong>${user.nombre}</strong>,</p>
+      <p>Hemos registrado correctamente tu solicitud realizada el <strong>${fechaTxt}</strong>. A continuación, el detalle de tus artículos:</p>
+      
+      ${tablaArticulos}
+      
+      <p style="margin-top: 20px;"><strong>Datos del colaborador:</strong><br>
+      Cédula: ${user.cedula}<br>
+      Cargo: ${user.cargo}<br>
+      CECO: ${user.ceco}</p>
+      
+      <hr style="border: 0; border-top: 1px solid #eee; margin: 20px 0;">
+      <p style="font-size: 12px; color: #777; text-align: center;">
+        Este es un mensaje automático del Sistema de Gestión de Uniformes.
+      </p>
+    </div>
+  `;
+
+  // Envío del correo
+  try {
+    // CAMBIO REALIZADO: MailApp -> GmailApp
+    GmailApp.sendEmail(email, "Confirmación de Solicitud de Uniformes - " + user.nombre, "", {
+      htmlBody: cuerpoHtml,
+      name: "Uniformes CNCH"
+    });
+  } catch (error) {
+    console.error("Error al enviar email con GmailApp: " + error.toString());
+  }
 }
 
 function obtenerHistorial(cedula) {

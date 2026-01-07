@@ -2,6 +2,9 @@
 let USUARIO = null;
 let CARRITO = [];
 
+/**
+ * Valida el ingreso y muestra el dashboard
+ */
 function ejecutarLogin() {
   const cedula = document.getElementById('input-cedula').value;
   const msg = document.getElementById('mensaje-login');
@@ -27,7 +30,7 @@ function ejecutarLogin() {
 
 function abrirModalPedido() {
   CARRITO = [];
-  actualizarVistaCarrito(); // Ahora el ID ya existe en el DOM
+  actualizarVistaCarrito();
   document.getElementById('modal-pedido').style.display = 'flex';
   google.script.run.withSuccessHandler(lista => {
     const s = document.getElementById('select-prenda');
@@ -38,6 +41,8 @@ function abrirModalPedido() {
 
 function cambioPrenda() {
   const prenda = document.getElementById('select-prenda').value;
+  // Limpiamos el código al cambiar de prenda para evitar errores
+  document.getElementById('input-codigo').value = ""; 
   google.script.run.withSuccessHandler(tallas => {
     const s = document.getElementById('select-talla');
     s.innerHTML = '<option value="">...</option>';
@@ -48,23 +53,35 @@ function cambioPrenda() {
 function cambioTalla() {
   const p = document.getElementById('select-prenda').value;
   const t = document.getElementById('select-talla').value;
+  document.getElementById('input-codigo').value = "Cargando...";
   google.script.run.withSuccessHandler(c => document.getElementById('input-codigo').value = c)
     .obtenerCodigoUniforme(p, t);
 }
 
+/**
+ * AJUSTE SOLICITADO: No permite agregar si el código está vacío o es 'N/A'
+ */
 function agregarAlCarrito() {
   const p = document.getElementById('select-prenda').value;
   const t = document.getElementById('select-talla').value;
   const c = document.getElementById('input-codigo').value;
-  if(!p || !t || c === 'N/A') return alert("Complete los datos");
+  
+  // Validación estricta de código cargado
+  if(!p || !t || !c || c === 'N/A' || c === 'Cargando...') {
+    return alert("⚠️ No se puede agregar: El código del uniforme no se ha cargado correctamente o no existe. Verifica la selección.");
+  }
 
   CARRITO.push({ prenda: p, talla: t, codigo: c });
   actualizarVistaCarrito();
+  
+  // Limpiar campos para nueva selección
+  document.getElementById('input-codigo').value = "";
+  document.getElementById('select-talla').innerHTML = '<option value="">...</option>';
 }
 
 function actualizarVistaCarrito() {
   const lista = document.getElementById('lista-carrito');
-  if(!lista) return; // Salvaguarda
+  if(!lista) return;
   lista.innerHTML = "";
   CARRITO.forEach((item, i) => {
     lista.innerHTML += `<tr><td>${item.prenda}</td><td>${item.talla}</td>
@@ -75,11 +92,25 @@ function actualizarVistaCarrito() {
 
 function quitar(i) { CARRITO.splice(i, 1); actualizarVistaCarrito(); }
 
+/**
+ * AJUSTE SOLICITADO: Valida que todos los items del carrito tengan código antes de enviar
+ */
 function finalizarPedido() {
+  // Verificación de integridad final
+  const carritoEsValido = CARRITO.every(item => item.codigo && item.codigo !== 'N/A' && item.codigo !== 'Cargando...');
+
+  if (!carritoEsValido) {
+    return alert("⚠️ Error: Hay artículos en el carrito sin código válido. Por favor elimínalos y agrégalos nuevamente.");
+  }
+
   const btn = document.getElementById('btn-enviar');
-  btn.disabled = true; btn.innerHTML = "Enviando...";
+  btn.disabled = true; 
+  btn.innerHTML = "<i class='fa-solid fa-spinner fa-spin'></i> Enviando...";
+  
   google.script.run.withSuccessHandler(msg => {
-    alert(msg); cerrarModal(); cargarHistorial();
+    alert(msg); 
+    cerrarModal(); 
+    cargarHistorial();
   }).guardarPedidoMasivo(CARRITO, USUARIO);
 }
 
