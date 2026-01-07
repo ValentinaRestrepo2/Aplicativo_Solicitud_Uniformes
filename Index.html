@@ -1,84 +1,59 @@
 <!DOCTYPE html>
 <html>
-
 <head>
   <base target="_top">
   <?!= include('Stylesheet'); ?>
-
-  <link href="https://cdnjs.cloudflare.com/ajax/libs/select2/4.0.13/css/select2.min.css" rel="stylesheet" />
 </head>
-
 <body>
 
-  <div id="login-screen" class="app-container">
-    <h2>🗒️ Solicita tus uniformes</h2>
-    <input type="number" id="cedula-input" placeholder="Escriba su cédula aquí">
-    <button onclick="handleLogin()">INGRESAR</button>
-    <p id="login-message" class="error"></p>
-  </div>
-
-  <div id="main-app-screen" class="app-container" style="display:none;">
-    <h2 id="welcome-message"></h2>
-
-    <div class="header-actions">
-      <button onclick="showNewRequestModal()" style="background-color:#00A441" >➕ NUEVA SOLICITUD </button>
-    </div>
-    <br>
-    <center>
-      <h3> ➡️ Historial de solicitudes</h3>
-    </center>
-    <table id="solicitudes-table">
-      <thead>
-        <tr>
-          <th>Fecha solicitud</th>
-          <th>Nombre colaborador</th>
-          <th>Uniforme solicitado</th>
-          <th>Talla</th>
-        </tr>
-      </thead>
-      <tbody></tbody>
-    </table>
-  </div>
-
-  <div id="request-modal" class="modal-backdrop" style="display:none;">
-    <div class="modal-content">
-      <h3>👇 Formulario de Solicitud</h3>
-      <form id="request-form">
-        <input type="hidden" id="form-cedula">
-        <label>Fecha:</label>
-        <input type="text" id="form-timestamp" readonly>
-        <label>Nombre colaborador:</label>
-        <input type="text" id="form-nombre" readonly>
-        <label>Cargo:</label>
-        <input type="text" id="form-cargo" readonly>
-        <label>CECO:</label>
-        <input type="text" id="form-ceco" readonly>
-        <label>Sexo:</label>
-        <input type="text" id="form-sexo" readonly>
-        <label>Rol:</label>
-        <input type="text" id="form-rol" readonly>
-        <label>Código del uniforme:</label>
-        <input type="text" id="form-codigo" readonly>
-
-        <label for="form-uniforme">Uniforme:</label>
-        <select id="form-uniforme" onchange="loadTallas()" required>
-          <option value="">Seleccione...</option>
-        </select>
-
-        <label for="form-talla">Talla:</label>
-        <select id="form-talla" onchange="loadCodigo()" required>
-          <option value="">Seleccione...</option>
-        </select>
-
-        <button type="submit">Enviar Solicitud</button>
-        <button type="button" class="cancel-button" onclick="closeModal()">Cancelar</button>
-        <p id="form-message" class="error"></p>
-      </form>
+  <div id="pantalla-login" class="contenedor-app">
+    <div class="tarjeta-login">
+      <h2><i class="fa-solid fa-user-shield"></i> Solicita tus uniformes</h2>
+      <input type="number" id="input-cedula" placeholder="Escribe aquí tu cédula">
+      <button onclick="ejecutarLogin()" class="boton-redondo btn-azul">INGRESAR</button>
+      <div id="mensaje-login" class="mensaje-flotante"></div>
     </div>
   </div>
+
+  <div id="pantalla-principal" class="contenedor-app" style="display:none; max-width: 600px;">
+    <h2 id="bienvenida" style="text-align:center"></h2>
+    <button onclick="abrirModalPedido()" class="boton-redondo btn-solicitud-top">
+      <i class="fa-solid fa-circle-plus"></i> NUEVA SOLICITUD
+    </button>
+    <center><h3><i class="fa-solid fa-clock-rotate-left"></i> Historial</h3></center>
+    <div id="render-historial"></div>
+  </div>
+
+  <div id="modal-pedido" class="modal-f">
+    <div class="modal-c">
+      <h3><i class="fa-solid fa-cart-shopping"></i> Tu Pedido</h3>
+      <label>Prenda:</label>
+      <select id="select-prenda" onchange="cambioPrenda()"></select>
+      <label>Talla:</label>
+      <select id="select-talla" onchange="cambioTalla()"></select>
+      <label>Código:</label>
+      <input type="text" id="input-codigo" readonly>
+      
+      <button onclick="agregarAlCarrito()" class="boton-redondo btn-icon" style="background: var(--naranja)">
+        <i class="fa-solid fa-cart-shopping"></i> Agregar al carrito
+      </button>
+
+      <div style="margin-top:20px; border-top: 1px solid #eee; padding-top:10px">
+        <table style="width:100%; font-size: 12px">
+          <thead><tr><th>Item</th><th>Talla</th><th></th></tr></thead>
+          <tbody id="lista-carrito"></tbody> </table>
+      </div>
+
+      <button id="btn-enviar" onclick="finalizarPedido()" class="boton-redondo btn-icon" style="background:var(--verde); color:white; margin-top:20px;" disabled>
+        <i class="fa-solid fa-paper-plane"></i> Enviar todo
+      </button>
+      <button onclick="cerrarModal()" class="boton-redondo btn-icon" style="background:#eee; margin-top:10px">
+        <i class="fa-solid fa-xmark"></i> Cerrar
+      </button>
+    </div>
+  </div>
+
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/select2/4.0.13/js/select2.min.js"></script>
   <?!= include('Javascript'); ?>
 </body>
-
 </html>

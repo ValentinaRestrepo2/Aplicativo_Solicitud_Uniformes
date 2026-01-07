@@ -1,112 +1,197 @@
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 <style>
-  /* Base - Responsive para móvil primero */
-  body {
-    font-family: Arial, sans-serif;
-    background-color: #f4f4f4;
-    padding: 10px;
-    margin: 0;
-  }
-  .app-container {
-    background-color: white;
-    padding: 20px;
-    border-radius: 8px;
-    box-shadow: 0 4px 8px rgba(0,0,0,0.1);
-    max-width: 600px; /* Limita el ancho para web, pero flexible en móvil */
-    margin: 20px auto;
-  }
-
-  thead{
-    text-align: center;
+  :root {
+    --azul: #007bff;
+    --verde: #00A441;
+    --naranja: #ffc107;
+    --rojo: #dc3545;
+    --capa-oscura: rgba(0, 0, 0, 0.65); /* Ajusta este valor (0.65) para más o menos oscuridad */
     
   }
-  
-  /* Estilos de Formulario (Intuitivo) */
-  input[type="number"], input[type="text"], select, button {
-    width: 100%;
-    padding: 10px;
-    margin: 8px 0;
-    display: inline-block;
-    border: 1px solid #ccc;
-    border-radius: 4px;
-    font-weight: bold;
-    box-sizing: border-box; /* Crucial para responsive */
-  }
-  label {
-      display: block;
-      margin-top: 10px;
-      font-weight: bold;
-  }
-  button {
-    background-color: #007bff;
-    color: white;
-    cursor: pointer;
-    font-size: 16px;
-  }
-  .cancel-button {
-      background-color: #6c757d;
-  }
 
-  /* Estilos del Historial */
-  #solicitudes-table {
-    width: 100%;
-    border-collapse: collapse;
-    margin-top: 15px;
-  }
-  #solicitudes-table th, #solicitudes-table td {
-    border: 1px solid #ddd;
-    padding: 8px;
-    text-align: left;
-  }
-  
-  /* MODAL FLOTANTE */
-  .modal-backdrop {
-    position: fixed;
-    z-index: 1000;
-    left: 0;
-    top: 0;
-    width: 100%;
-    height: 100%;
-    overflow: auto;
-    background-color: rgba(0,0,0,0.4); 
-    display: flex; /* Centrar el contenido */
+  body {
+    font-family: 'Segoe UI', sans-serif;
+    background-color: #f4f7f9;
+    margin: 0;
+    display: flex;
     justify-content: center;
     align-items: center;
+    min-height: 100vh;
+    /* LINEA PARA IMAGEN DE FONDO OSCURECIDA */
+    background: linear-gradient(var(--capa-oscura), var(--capa-oscura)), 
+                url('https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRGR0Othr81WF3x4vh5S1ma6v6APHHepbdujg&s'); 
+    background-size: cover;
+    background-position: center;
+    background-attachment: fixed;
   }
-  .modal-content {
-    background-color: #fefefe;
-    margin: auto;
+
+  .contenedor-app {
+    width: 100%;
+    background-color: #f4f7f9;
+    max-width: 500px;
     padding: 20px;
-    border: 1px solid #888;
-    width: 90%; /* Responsive: 90% del ancho */
-    max-width: 500px; /* Límite en pantallas grandes */
-    border-radius: 8px;
+    box-sizing: border-box;
+    border-radius:20px;
   }
-  
-  .error {
-    color: red;
+
+  /* LOGIN MEJORADO */
+  .tarjeta-login {
+    background: white;
+    padding: 40px;
+    border-radius: 25px;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
+    text-align: center;
+    backdrop-filter: blur(5px);
+  }
+
+  .tarjeta-login h2 {
+    margin-bottom: 25px;
+    color: #333;
+    font-weight: 600;
+  }
+
+  .tarjeta-login input {
+    width: 100%;
+    padding: 15px;
+    border: 1px solid #ddd;
+    border-radius: 12px;
+    margin-bottom: 20px;
+    font-size: 16px;
+    box-sizing: border-box;
+    text-align: center;
+  }
+
+  .boton-redondo {
+    width: 100%;
+    padding: 16px;
+    border-radius: 50px; /* Bordes muy redondeados */
+    border: none;
+    font-weight: 800;
+    font-size: 16px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    text-transform: uppercase;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+  }
+
+  .btn-azul {
+    background: var(--azul);
+    color: white;
+  }
+
+  .btn-azul:hover {
+    background: #0056b3;
+    transform: translateY(-2px);
+  }
+
+  /* MENSAJES LLAMATIVOS */
+  .mensaje-flotante {
+    padding: 12px;
+    border-radius: 10px;
+    margin-top: 15px;
     font-weight: bold;
+    display: none;
+    font-size: 14px;
+  }
+
+  .msg-error {
+    background: #f8d7da;
+    color: var(--rojo);
+    border: 1px solid #f5c6cb;
+  }
+
+  .msg-carga {
+    background: #fff3cd;
+    color: #856404;
+    border: 1px solid #ffeeba;
+  }
+
+  /* DASHBOARD */
+  .btn-solicitud-top {
+    background: var(--verde);
+    color: white;
+    padding: 10px;
+    border-radius: 18px;
+    font-size: 15px;
+    width: 100%;
+    margin: 30px 0;
+    box-shadow: 0 8px 20px rgba(0, 164, 65, 0.2);
+  }
+
+  /* TABLA HISTORIAL */
+  .vacio-estilo {
+    padding: 50px 20px;
+    background: white;
+    border-radius: 20px;
+    border: 2px dashed #ddd;
+    text-align: center;
+  }
+
+  .table-res {
+    width: 100%;
+    border-collapse: collapse;
+    background: white;
+    border-radius: 15px;
+    overflow: hidden;
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.05);
+  }
+
+  .table-res th {
+    background: #f8f9fa;
+    padding: 15px;
+    font-size: 13px;
+    color: #666;
+  }
+
+  .table-res td {
+    padding: 12px;
+    border-top: 1px solid #eee;
+    font-size: 13px;
+    text-align: center;
+  }
+
+  /* MODAL */
+  .modal-f {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.6);
+    display: none;
+    justify-content: center;
+    align-items: center;
+    z-index: 100;
+  }
+
+  .modal-c {
+    background: white;
+    padding: 25px;
+    border-radius: 20px;
+    width: 90%;
+    max-width: 400px;
+    max-height: 85vh;
+    overflow-y: auto;
+  }
+
+  select,
+  .modal-c input {
+    width: 100%;
+    padding: 12px;
+    margin: 8px 0;
+    border-radius: 10px;
+    border: 1px solid #ddd;
+  }
+
+  .btn-icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 5px;
+    gap: 8px;
     margin-top: 10px;
   }
-
-  /* Media Query (Opcional, pero bueno para tablet/desktop) */
-  @media (min-width: 600px) {
-    .app-container {
-      padding: 30px;
-    }
-  }
-
-  input[readonly], 
-select[readonly] {
-  background-color: #e9ecef; /* Un gris muy claro */
-  color: #495057;           /* Un texto un poco más oscuro */
-  border: 1px dashed #ced4da; /* Borde de puntos o guiones para indicar inactividad */
-  cursor: default;          /* Mantiene el cursor por defecto (no de texto) */
-  font-weight: bold;        /* Opcional: para destacar la información */
-}
-
-/* Evitar que se resalte al hacer clic (focus) */
-input[readonly]:focus {
-  outline: none;
-  box-shadow: none;
-}
 </style>

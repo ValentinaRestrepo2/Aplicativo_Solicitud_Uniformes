@@ -1,230 +1,101 @@
 <script>
-  let USER_DATA = null; // Variable global para guardar los datos del colaborador
+let USUARIO = null;
+let CARRITO = [];
 
-  // --- LOGIC DE LOGIN ---
-  function handleLogin() {
-    const cedula = document.getElementById('cedula-input').value.trim();
-    const msg = document.getElementById('login-message');
-    msg.textContent = 'Verificando...';
+function ejecutarLogin() {
+  const cedula = document.getElementById('input-cedula').value;
+  const msg = document.getElementById('mensaje-login');
+  if(!cedula) return msg.innerHTML="Ingrese cédula", msg.className="mensaje-flotante msg-error", $(msg).fadeIn();
 
-    if (!cedula) {
-      msg.textContent = 'Por favor, ingrese su Cédula.';
+  msg.innerHTML="<i class='fa-solid fa-spinner fa-spin'></i> Validando...";
+  msg.className="mensaje-flotante msg-carga";
+  $(msg).show();
+
+  google.script.run.withSuccessHandler(res => {
+    if(res) {
+      USUARIO = res;
+      document.getElementById('pantalla-login').style.display = 'none';
+      document.getElementById('pantalla-principal').style.display = 'block';
+      document.getElementById('bienvenida').innerHTML = `👋Hola, <b>${res.nombre}</b>`;
+      cargarHistorial();
+    } else {
+      msg.innerHTML="Cédula no registrada";
+      msg.className="mensaje-flotante msg-error";
+    }
+  }).validarIngreso(cedula);
+}
+
+function abrirModalPedido() {
+  CARRITO = [];
+  actualizarVistaCarrito(); // Ahora el ID ya existe en el DOM
+  document.getElementById('modal-pedido').style.display = 'flex';
+  google.script.run.withSuccessHandler(lista => {
+    const s = document.getElementById('select-prenda');
+    s.innerHTML = '<option value="">Seleccione...</option>';
+    lista.forEach(p => s.appendChild(new Option(p, p)));
+  }).obtenerUniformesPorRol(USUARIO.sexo, USUARIO.rol);
+}
+
+function cambioPrenda() {
+  const prenda = document.getElementById('select-prenda').value;
+  google.script.run.withSuccessHandler(tallas => {
+    const s = document.getElementById('select-talla');
+    s.innerHTML = '<option value="">...</option>';
+    tallas.forEach(t => s.appendChild(new Option(t, t)));
+  }).obtenerTallasPorUniforme(prenda);
+}
+
+function cambioTalla() {
+  const p = document.getElementById('select-prenda').value;
+  const t = document.getElementById('select-talla').value;
+  google.script.run.withSuccessHandler(c => document.getElementById('input-codigo').value = c)
+    .obtenerCodigoUniforme(p, t);
+}
+
+function agregarAlCarrito() {
+  const p = document.getElementById('select-prenda').value;
+  const t = document.getElementById('select-talla').value;
+  const c = document.getElementById('input-codigo').value;
+  if(!p || !t || c === 'N/A') return alert("Complete los datos");
+
+  CARRITO.push({ prenda: p, talla: t, codigo: c });
+  actualizarVistaCarrito();
+}
+
+function actualizarVistaCarrito() {
+  const lista = document.getElementById('lista-carrito');
+  if(!lista) return; // Salvaguarda
+  lista.innerHTML = "";
+  CARRITO.forEach((item, i) => {
+    lista.innerHTML += `<tr><td>${item.prenda}</td><td>${item.talla}</td>
+    <td><i class="fa-solid fa-trash" style="color:red; cursor:pointer" onclick="quitar(${i})"></i></td></tr>`;
+  });
+  document.getElementById('btn-enviar').disabled = CARRITO.length === 0;
+}
+
+function quitar(i) { CARRITO.splice(i, 1); actualizarVistaCarrito(); }
+
+function finalizarPedido() {
+  const btn = document.getElementById('btn-enviar');
+  btn.disabled = true; btn.innerHTML = "Enviando...";
+  google.script.run.withSuccessHandler(msg => {
+    alert(msg); cerrarModal(); cargarHistorial();
+  }).guardarPedidoMasivo(CARRITO, USUARIO);
+}
+
+function cargarHistorial() {
+  const div = document.getElementById('render-historial');
+  div.innerHTML = "<center><i class='fa-solid fa-spinner fa-spin'></i></center>";
+  google.script.run.withSuccessHandler(datos => {
+    if(datos.length === 0) {
+      div.innerHTML = `<div class="vacio-estilo"><i class="fa-solid fa-box-open" style="font-size:40px; color:#ccc"></i><p>No hay solicitudes previas</p></div>`;
       return;
     }
-    
-    // Llamada asíncrona al servidor (Apps Script)
-    google.script.run
-      .withSuccessHandler(showMainApp)
-      .withFailureHandler(function(error) {
-          msg.textContent = 'Error en el servidor: ' + error.message;
-      })
-      .validateLogin(cedula);
-  }
-
-  function showMainApp(userData) {
-    const msg = document.getElementById('login-message');
-    if (userData) {
-      USER_DATA = userData;
-      document.getElementById('login-screen').style.display = 'none';
-      document.getElementById('main-app-screen').style.display = 'block';
-      document.getElementById('welcome-message').textContent = `👋 Hola, ${userData.nombre}.`;
-      msg.textContent = '';
-      loadHistorial(userData.cedula);
-    } else {
-      msg.textContent = 'Cédula no encontrada en la Maestra o colaborador inactivo.';
-    }
-  }
-
-  // --- LOGIC DEL HISTORIAL ---
-function loadHistorial(cedula) {
-    google.script.run
-      .withSuccessHandler(displayHistorial)
-      .withFailureHandler(function(error) {
-           console.error("Error al cargar historial:", error);
-           // Si falla, al menos muestra un mensaje amigable
-           const tableBody = document.querySelector('#solicitudes-table tbody');
-           tableBody.innerHTML = '<tr><td colspan="4">Error al cargar el historial. Intente recargar.</td></tr>';
-      })
-      .getSolicitudes(cedula);
+    let h = `<table class="table-res"><thead><tr><th>Fecha</th><th>Prenda</th><th>Talla</th></tr></thead><tbody>`;
+    datos.forEach(f => h += `<tr><td>${new Date(f[0]).toLocaleDateString()}</td><td>${f[2]}</td><td>${f[3]}</td></tr>`);
+    div.innerHTML = h + "</tbody></table>";
+  }).obtenerHistorial(USUARIO.cedula);
 }
 
-  function displayHistorial(solicitudes) {
-  const tableBody = document.querySelector('#solicitudes-table > tbody');
-  
-  tableBody.innerHTML = ''; 
-   console.log(tableBody)
-   console.log(solicitudes)
-  if (!Array.isArray(solicitudes)) {
-      console.error("displayHistorial recibió un valor NO array:", solicitudes);
-      solicitudes = []; // Forzamos que sea un array vacío
-  }
-
-  if (solicitudes.length === 0) {
-    tableBody.innerHTML = '<tr><td colspan="4">No hay solicitudes registradas.</td></tr>';
-    return;
-  }
-
-  solicitudes.forEach(row => {
-    // Índices: [0]=Marca temporal, [7]=Uniforme, [8]=Talla
-    const tr = tableBody.insertRow();
-    tr.insertCell().textContent = new Date(row[0]).toLocaleDateString();
-    tr.insertCell().textContent = row[3]; 
-    tr.insertCell().textContent = row[8]; 
-    tr.insertCell().textContent = row[9]; 
-  });
-}
-
-  // --- LOGIC DEL FORMULARIO MODAL ---
-  
-  function showNewRequestModal() {
-    if (!USER_DATA) {
-        alert('Error: Datos de usuario no cargados. Intente ingresar de nuevo.');
-        return;
-    }
-    
-    // 1. Llenar campos automáticos y readonly
-    const now = new Date();
-    document.getElementById('form-timestamp').value = now.toLocaleString();
-    document.getElementById('form-cedula').value = USER_DATA.cedula;
-    document.getElementById('form-nombre').value = USER_DATA.nombre;
-    document.getElementById('form-sexo').value = USER_DATA.sexo;
-    document.getElementById('form-cargo').value = USER_DATA.cargo;
-    document.getElementById('form-ceco').value = USER_DATA.ceco;
-    document.getElementById('form-rol').value = USER_DATA.rol;
-    document.getElementById('form-codigo').value = ''; // Se llena después
-    document.getElementById('form-uniforme').innerHTML = '<option value="">Cargando...</option>';
-    document.getElementById('form-talla').innerHTML = '<option value="">Seleccione Uniforme</option>';
-    document.getElementById('form-message').textContent = '';
-
-    // 2. Cargar la lista desplegable de uniformes
-    google.script.run
-      .withSuccessHandler(loadUniformesDropdown)
-      .getUniformesBySexo(USER_DATA.sexo,USER_DATA.rol);
-      
-    // 3. Mostrar el modal
-    document.getElementById('request-modal').style.display = 'flex';
-  }
-
-  function closeModal() {
-    document.getElementById('request-modal').style.display = 'none';
-    document.getElementById('request-form').reset(); 
-  }
-  
-  function loadUniformesDropdown(uniformes) {
-    const dropdown = document.getElementById('form-uniforme');
-    dropdown.innerHTML = '<option value="">Seleccione...</option>';
-    uniformes.forEach(uniforme => {
-        const option = document.createElement('option');
-        option.value = uniforme;
-        option.textContent = uniforme;
-        dropdown.appendChild(option);
-    });
-    
-    // 1. Inicializar Select2 (utiliza jQuery: '$')
-    // El 'delay' de 10ms ayuda a asegurar que el DOM se haya actualizado
-    setTimeout(function() {
-        $('#form-uniforme').select2({
-            dropdownParent: $('#request-modal') // Crucial para que funcione dentro del modal
-        });
-        
-        // 2. Agregar un listener para que Select2 active tu función de tallas
-        // Select2 usa el evento 'change' en el elemento original
-        $('#form-uniforme').on('change', loadTallas);
-        
-    }, 10);
-    
-    dropdown.value = ''; 
-    document.getElementById('form-talla').innerHTML = '<option value="">Seleccione Uniforme</option>';
-}
-  
-  // Función para llenar la lista de tallas (se llama al cambiar el Uniforme)
-  function loadTallas() {
-    const uniforme = document.getElementById('form-uniforme').value;
-    const tallaDropdown = document.getElementById('form-talla');
-    tallaDropdown.innerHTML = '<option value="">Cargando...</option>';
-    document.getElementById('form-codigo').value = '';
-
-    if (!uniforme) {
-        tallaDropdown.innerHTML = '<option value="">Seleccione Uniforme</option>';
-        return;
-    }
-    
-    google.script.run
-      .withSuccessHandler(loadTallasDropdown)
-      .getTallasByUniforme(uniforme);
-  }
-
-  function loadTallasDropdown(tallas) {
-    const dropdown = document.getElementById('form-talla');
-    dropdown.innerHTML = '<option value="">Seleccione...</option>';
-    tallas.forEach(talla => {
-        const option = document.createElement('option');
-        option.value = talla;
-        option.textContent = talla;
-        dropdown.appendChild(option);
-    });
-    // Si solo hay una talla, podrías seleccionarla automáticamente para mayor facilidad
-    if (tallas.length === 1) {
-        dropdown.value = tallas[0];
-        loadCodigo(); // Cargar código automáticamente
-    }
-  }
-  
-  // Función para llenar el código (se llama al cambiar la Talla)
-  function loadCodigo() {
-      const uniforme = document.getElementById('form-uniforme').value;
-      const talla = document.getElementById('form-talla').value;
-      const codigoInput = document.getElementById('form-codigo');
-
-      if (!uniforme || !talla) {
-          codigoInput.value = '';
-          return;
-      }
-
-      google.script.run
-          .withSuccessHandler(codigo => codigoInput.value = codigo)
-          .getCodigoUniforme(uniforme, talla);
-  }
-
-
-  // --- LOGIC DE ENVÍO ---
-  document.getElementById('request-form').addEventListener('submit', function(e) {
-  e.preventDefault();
-  const formMsg = document.getElementById('form-message');
-    
-    const formData = {
-      cedula: document.getElementById('form-cedula').value,
-      nombre: document.getElementById('form-nombre').value,
-      sexo: document.getElementById('form-sexo').value,
-      cargo: document.getElementById('form-cargo').value,
-      ceco: document.getElementById('form-ceco').value,
-      uniforme: document.getElementById('form-uniforme').value,
-      talla: document.getElementById('form-talla').value,
-      codigo: document.getElementById('form-codigo').value,
-      // Los demás campos (timestamp, correo) se manejan en el servidor o se añaden si son necesarios
-    };
-
-    if (!formData.uniforme || !formData.talla) {
-        formMsg.textContent = 'Por favor, seleccione el Uniforme y la Talla.';
-        return;
-    }
-
-    if (!formData.codigo) {
-      formMsg.textContent = 'ERROR: El Código del Uniforme no ha sido cargado. Por favor, intente de nuevo.';
-      return; // Detiene el envío
-  }
-    
-    formMsg.textContent = 'Enviando solicitud...';
-
-    google.script.run
-      .withSuccessHandler(function(response) {
-          alert(response); // Muestra 'Solicitud guardada con éxito.'
-          closeModal();
-          loadHistorial(formData.cedula); // Refresca el historial
-      })
-      .withFailureHandler(function(error) {
-          formMsg.textContent = 'Error al guardar la solicitud: ' + error.message;
-      })
-      .saveSolicitud(formData);
-  });
+function cerrarModal() { document.getElementById('modal-pedido').style.display = 'none'; }
 </script>
