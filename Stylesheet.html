@@ -5,8 +5,8 @@
     --verde: #00A441;
     --naranja: #ffc107;
     --rojo: #dc3545;
-    --capa-oscura: rgba(0, 0, 0, 0.65); /* Ajusta este valor (0.65) para más o menos oscuridad */
-    
+    --capa-oscura: rgba(0, 0, 0, 0.65);
+
   }
 
   body {
@@ -17,12 +17,22 @@
     justify-content: center;
     align-items: center;
     min-height: 100vh;
-    /* LINEA PARA IMAGEN DE FONDO OSCURECIDA */
-    background: linear-gradient(var(--capa-oscura), var(--capa-oscura)), 
-                url('https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRGR0Othr81WF3x4vh5S1ma6v6APHHepbdujg&s'); 
+    background: linear-gradient(var(--capa-oscura), var(--capa-oscura)),
+      url('https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRGR0Othr81WF3x4vh5S1ma6v6APHHepbdujg&s');
     background-size: cover;
     background-position: center;
     background-attachment: fixed;
+  }
+
+  .alerta-ya-realizado {
+    background: #e7f3eb;
+    color: #155724;
+    padding: 20px;
+    border-radius: 15px;
+    border: 1px solid #c3e6cb;
+    font-weight: bold;
+    margin: 20px 0;
+    font-size: 15px;
   }
 
   .contenedor-app {
@@ -31,10 +41,9 @@
     max-width: 500px;
     padding: 20px;
     box-sizing: border-box;
-    border-radius:20px;
+    border-radius: 20px;
   }
 
-  /* LOGIN MEJORADO */
   .tarjeta-login {
     background: white;
     padding: 40px;
@@ -64,7 +73,7 @@
   .boton-redondo {
     width: 100%;
     padding: 16px;
-    border-radius: 50px; /* Bordes muy redondeados */
+    border-radius: 50px;
     border: none;
     font-weight: 800;
     font-size: 16px;
@@ -87,7 +96,6 @@
     transform: translateY(-2px);
   }
 
-  /* MENSAJES LLAMATIVOS */
   .mensaje-flotante {
     padding: 12px;
     border-radius: 10px;
@@ -109,7 +117,6 @@
     border: 1px solid #ffeeba;
   }
 
-  /* DASHBOARD */
   .btn-solicitud-top {
     background: var(--verde);
     color: white;
@@ -121,7 +128,6 @@
     box-shadow: 0 8px 20px rgba(0, 164, 65, 0.2);
   }
 
-  /* TABLA HISTORIAL */
   .vacio-estilo {
     padding: 50px 20px;
     background: white;
@@ -153,7 +159,6 @@
     text-align: center;
   }
 
-  /* MODAL */
   .modal-f {
     position: fixed;
     top: 0;
@@ -193,5 +198,29 @@
     padding: 5px;
     gap: 8px;
     margin-top: 10px;
+  }
+
+  .contenedor-app {
+    position: relative;
+    ...
+  }
+
+  .btn-cerrar-sesion {
+    font-family: 'Segoe UI', sans-serif;
+    position: absolute;
+    top: 20px;
+    right: 20px;
+    background: none;
+    border: none;
+    color: #666;
+    font-size: 18px;
+    cursor: pointer;
+    transition: color 0.3s ease;
+    z-index: 10;
+  }
+
+  .btn-cerrar-sesion:hover {
+    color: var(--rojo);
+    transform: scale(1.1);
   }
 </style>

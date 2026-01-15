@@ -1,9 +1,11 @@
 <!DOCTYPE html>
 <html>
+
 <head>
   <base target="_top">
   <?!= include('Stylesheet'); ?>
 </head>
+
 <body>
 
   <div id="pantalla-login" class="contenedor-app">
@@ -16,44 +18,65 @@
   </div>
 
   <div id="pantalla-principal" class="contenedor-app" style="display:none; max-width: 600px;">
-    <h2 id="bienvenida" style="text-align:center"></h2>
-    <button onclick="abrirModalPedido()" class="boton-redondo btn-solicitud-top">
-      <i class="fa-solid fa-circle-plus"></i> NUEVA SOLICITUD
+    <button onclick="cerrarSesion()" class="btn-cerrar-sesion" title="Cerrar Sesión">
+      <i class="fa-solid fa-right-from-bracket"></i> Cerrar sesión
     </button>
-    <center><h3><i class="fa-solid fa-clock-rotate-left"></i> Historial</h3></center>
-    <div id="render-historial"></div>
-  </div>
-
-  <div id="modal-pedido" class="modal-f">
-    <div class="modal-c">
-      <h3><i class="fa-solid fa-cart-shopping"></i> Tu Pedido</h3>
-      <label>Prenda:</label>
-      <select id="select-prenda" onchange="cambioPrenda()"></select>
-      <label>Talla:</label>
-      <select id="select-talla" onchange="cambioTalla()"></select>
-      <label>Código:</label>
-      <input type="text" id="input-codigo" readonly>
-      
-      <button onclick="agregarAlCarrito()" class="boton-redondo btn-icon" style="background: var(--naranja)">
-        <i class="fa-solid fa-cart-shopping"></i> Agregar al carrito
-      </button>
-
-      <div style="margin-top:20px; border-top: 1px solid #eee; padding-top:10px">
-        <table style="width:100%; font-size: 12px">
-          <thead><tr><th>Item</th><th>Talla</th><th></th></tr></thead>
-          <tbody id="lista-carrito"></tbody> </table>
+    <br><br>
+    <div class="tarjeta-login" style="padding-top: 50px;">
+      <h2 id="bienvenida" style="text-align:center"></h2>
+      <div id="area-accion-solicitud">
+        <button id="btn-nueva-solicitud" onclick="abrirModalPedido()" class="boton-redondo btn-solicitud-top">
+          <i class="fa-solid fa-circle-plus"></i> NUEVA SOLICITUD
+        </button>
+        <div id="msg-ya-solicito" class="alerta-ya-realizado" style="display:none;">
+          <i class="fa-solid fa-circle-check"></i> Usted ya ha realizado su solicitud de uniformes para este periodo.
+        </div>
       </div>
-
-      <button id="btn-enviar" onclick="finalizarPedido()" class="boton-redondo btn-icon" style="background:var(--verde); color:white; margin-top:20px;" disabled>
-        <i class="fa-solid fa-paper-plane"></i> Enviar todo
-      </button>
-      <button onclick="cerrarModal()" class="boton-redondo btn-icon" style="background:#eee; margin-top:10px">
-        <i class="fa-solid fa-xmark"></i> Cerrar
-      </button>
+      <center>
+        <h3><i class="fa-solid fa-clock-rotate-left"></i> Historial</h3>
+      </center>
+      <div id="render-historial"></div>
     </div>
-  </div>
 
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
-  <?!= include('Javascript'); ?>
+    <div id="modal-pedido" class="modal-f">
+      <div class="modal-c">
+        <h3><i class="fa-solid fa-cart-shopping"></i> Tu Pedido</h3>
+        <label>Prenda:</label>
+        <select id="select-prenda" onchange="cambioPrenda()"></select>
+        <label>Talla:</label>
+        <select id="select-talla" onchange="cambioTalla()"></select>
+        <label>Código:</label>
+        <input type="text" id="input-codigo" readonly>
+
+        <button onclick="agregarAlCarrito()" class="boton-redondo btn-icon" style="background: var(--naranja)">
+          <i class="fa-solid fa-cart-shopping"></i> Agregar al carrito
+        </button>
+
+        <div style="margin-top:20px; border-top: 1px solid #eee; padding-top:10px">
+          <table style="width:100%; font-size: 12px">
+            <thead>
+              <tr>
+                <th>Item</th>
+                <th>Talla</th>
+                <th></th>
+              </tr>
+            </thead>
+            <tbody id="lista-carrito"></tbody>
+          </table>
+        </div>
+
+        <button id="btn-enviar" onclick="finalizarPedido()" class="boton-redondo btn-icon"
+          style="background:var(--verde); color:white; margin-top:20px;" disabled>
+          <i class="fa-solid fa-paper-plane"></i> Enviar todo
+        </button>
+        <button onclick="cerrarModal()" class="boton-redondo btn-icon" style="background:#eee; margin-top:10px">
+          <i class="fa-solid fa-xmark"></i> Cerrar
+        </button>
+      </div>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
+    <?!= include('Javascript'); ?>
 </body>
+
 </html>

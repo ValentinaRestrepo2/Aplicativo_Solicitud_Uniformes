@@ -1,132 +1,142 @@
 <script>
-let USUARIO = null;
-let CARRITO = [];
+  let USUARIO = null;
+  let CARRITO = [];
 
-/**
- * Valida el ingreso y muestra el dashboard
- */
-function ejecutarLogin() {
-  const cedula = document.getElementById('input-cedula').value;
-  const msg = document.getElementById('mensaje-login');
-  if(!cedula) return msg.innerHTML="Ingrese cédula", msg.className="mensaje-flotante msg-error", $(msg).fadeIn();
+  function ejecutarLogin() {
+    const cedula = document.getElementById('input-cedula').value;
+    const msg = document.getElementById('mensaje-login');
+    if (!cedula) return $(msg).html("Ingrese cédula").fadeIn();
 
-  msg.innerHTML="<i class='fa-solid fa-spinner fa-spin'></i> Validando...";
-  msg.className="mensaje-flotante msg-carga";
-  $(msg).show();
+    $(msg).html("<i class='fa-solid fa-spinner fa-spin'></i> Validando...").show();
 
-  google.script.run.withSuccessHandler(res => {
-    if(res) {
-      USUARIO = res;
-      document.getElementById('pantalla-login').style.display = 'none';
-      document.getElementById('pantalla-principal').style.display = 'block';
-      document.getElementById('bienvenida').innerHTML = `👋Hola, <b>${res.nombre}</b>`;
-      cargarHistorial();
-    } else {
-      msg.innerHTML="Cédula no registrada";
-      msg.className="mensaje-flotante msg-error";
-    }
-  }).validarIngreso(cedula);
-}
+    google.script.run.withSuccessHandler(res => {
+      if (res) {
+        USUARIO = res;
+        document.getElementById('pantalla-login').style.display = 'none';
+        document.getElementById('pantalla-principal').style.display = 'block';
+        document.getElementById('bienvenida').innerHTML = `Hola, <b>${res.nombre}</b>`;
 
-function abrirModalPedido() {
-  CARRITO = [];
-  actualizarVistaCarrito();
-  document.getElementById('modal-pedido').style.display = 'flex';
-  google.script.run.withSuccessHandler(lista => {
-    const s = document.getElementById('select-prenda');
-    s.innerHTML = '<option value="">Seleccione...</option>';
-    lista.forEach(p => s.appendChild(new Option(p, p)));
-  }).obtenerUniformesPorRol(USUARIO.sexo, USUARIO.rol);
-}
+        if (res.haSolicitado) {
+          document.getElementById('btn-nueva-solicitud').style.display = 'none';
+          document.getElementById('msg-ya-solicito').style.display = 'block';
+        } else {
+          document.getElementById('btn-nueva-solicitud').style.display = 'block';
+          document.getElementById('msg-ya-solicito').style.display = 'none';
+        }
 
-function cambioPrenda() {
-  const prenda = document.getElementById('select-prenda').value;
-  // Limpiamos el código al cambiar de prenda para evitar errores
-  document.getElementById('input-codigo').value = ""; 
-  google.script.run.withSuccessHandler(tallas => {
-    const s = document.getElementById('select-talla');
-    s.innerHTML = '<option value="">...</option>';
-    tallas.forEach(t => s.appendChild(new Option(t, t)));
-  }).obtenerTallasPorUniforme(prenda);
-}
-
-function cambioTalla() {
-  const p = document.getElementById('select-prenda').value;
-  const t = document.getElementById('select-talla').value;
-  document.getElementById('input-codigo').value = "Cargando...";
-  google.script.run.withSuccessHandler(c => document.getElementById('input-codigo').value = c)
-    .obtenerCodigoUniforme(p, t);
-}
-
-/**
- * AJUSTE SOLICITADO: No permite agregar si el código está vacío o es 'N/A'
- */
-function agregarAlCarrito() {
-  const p = document.getElementById('select-prenda').value;
-  const t = document.getElementById('select-talla').value;
-  const c = document.getElementById('input-codigo').value;
-  
-  // Validación estricta de código cargado
-  if(!p || !t || !c || c === 'N/A' || c === 'Cargando...') {
-    return alert("⚠️ No se puede agregar: El código del uniforme no se ha cargado correctamente o no existe. Verifica la selección.");
+        cargarHistorial();
+      } else {
+        $(msg).html("Su cédula no se encuentra registrada").addClass("msg-error");
+      }
+    }).validarIngreso(cedula);
   }
 
-  CARRITO.push({ prenda: p, talla: t, codigo: c });
-  actualizarVistaCarrito();
-  
-  // Limpiar campos para nueva selección
-  document.getElementById('input-codigo').value = "";
-  document.getElementById('select-talla').innerHTML = '<option value="">...</option>';
-}
+  function abrirModalPedido() {
+    CARRITO = [];
+    actualizarVistaCarrito();
+    document.getElementById('modal-pedido').style.display = 'flex';
+    google.script.run.withSuccessHandler(lista => {
+      const s = document.getElementById('select-prenda');
+      s.innerHTML = '<option value="">Seleccione...</option>';
+      lista.forEach(p => s.appendChild(new Option(p, p)));
+    }).obtenerUniformesPorRol(USUARIO.sexo, USUARIO.rol);
+  }
 
-function actualizarVistaCarrito() {
-  const lista = document.getElementById('lista-carrito');
-  if(!lista) return;
-  lista.innerHTML = "";
-  CARRITO.forEach((item, i) => {
-    lista.innerHTML += `<tr><td>${item.prenda}</td><td>${item.talla}</td>
+  function cambioPrenda() {
+    const prenda = document.getElementById('select-prenda').value;
+    document.getElementById('input-codigo').value = "";
+    google.script.run.withSuccessHandler(tallas => {
+      const s = document.getElementById('select-talla');
+      s.innerHTML = '<option value="">...</option>';
+      tallas.forEach(t => s.appendChild(new Option(t, t)));
+    }).obtenerTallasPorUniforme(prenda);
+  }
+
+  function cambioTalla() {
+    const p = document.getElementById('select-prenda').value;
+    const t = document.getElementById('select-talla').value;
+    document.getElementById('input-codigo').value = "Cargando...";
+    google.script.run.withSuccessHandler(c => document.getElementById('input-codigo').value = c)
+      .obtenerCodigoUniforme(p, t);
+  }
+
+  function agregarAlCarrito() {
+    const p = document.getElementById('select-prenda').value;
+    const t = document.getElementById('select-talla').value;
+    const c = document.getElementById('input-codigo').value;
+
+    if (!p || !t || !c || c === 'N/A' || c === 'Cargando...') {
+      return alert("⚠️ No se puede agregar: El código del uniforme no se ha cargado correctamente o no existe. Espera un momento o verifica la selección.");
+    }
+
+    CARRITO.push({ prenda: p, talla: t, codigo: c });
+    actualizarVistaCarrito();
+
+    document.getElementById('input-codigo').value = "";
+    document.getElementById('select-talla').innerHTML = '<option value="">...</option>';
+  }
+
+  function actualizarVistaCarrito() {
+    const lista = document.getElementById('lista-carrito');
+    if (!lista) return;
+    lista.innerHTML = "";
+    CARRITO.forEach((item, i) => {
+      lista.innerHTML += `<tr><td>${item.prenda}</td><td>${item.talla}</td>
     <td><i class="fa-solid fa-trash" style="color:red; cursor:pointer" onclick="quitar(${i})"></i></td></tr>`;
-  });
-  document.getElementById('btn-enviar').disabled = CARRITO.length === 0;
-}
-
-function quitar(i) { CARRITO.splice(i, 1); actualizarVistaCarrito(); }
-
-/**
- * AJUSTE SOLICITADO: Valida que todos los items del carrito tengan código antes de enviar
- */
-function finalizarPedido() {
-  // Verificación de integridad final
-  const carritoEsValido = CARRITO.every(item => item.codigo && item.codigo !== 'N/A' && item.codigo !== 'Cargando...');
-
-  if (!carritoEsValido) {
-    return alert("⚠️ Error: Hay artículos en el carrito sin código válido. Por favor elimínalos y agrégalos nuevamente.");
+    });
+    document.getElementById('btn-enviar').disabled = CARRITO.length === 0;
   }
 
-  const btn = document.getElementById('btn-enviar');
-  btn.disabled = true; 
-  btn.innerHTML = "<i class='fa-solid fa-spinner fa-spin'></i> Enviando...";
-  
-  google.script.run.withSuccessHandler(msg => {
-    alert(msg); 
-    cerrarModal(); 
-    cargarHistorial();
-  }).guardarPedidoMasivo(CARRITO, USUARIO);
-}
+  function quitar(i) { CARRITO.splice(i, 1); actualizarVistaCarrito(); }
 
-function cargarHistorial() {
-  const div = document.getElementById('render-historial');
-  div.innerHTML = "<center><i class='fa-solid fa-spinner fa-spin'></i></center>";
-  google.script.run.withSuccessHandler(datos => {
-    if(datos.length === 0) {
-      div.innerHTML = `<div class="vacio-estilo"><i class="fa-solid fa-box-open" style="font-size:40px; color:#ccc"></i><p>No hay solicitudes previas</p></div>`;
-      return;
+  function finalizarPedido() {
+
+    const carritoEsValido = CARRITO.every(item => item.codigo && item.codigo !== 'N/A' && item.codigo !== 'Cargando...');
+
+    if (!carritoEsValido) {
+      return alert("⚠️ Error: Hay artículos en el carrito sin código válido. Por favor elimínalos y agrégalos nuevamente.");
     }
-    let h = `<table class="table-res"><thead><tr><th>Fecha</th><th>Prenda</th><th>Talla</th></tr></thead><tbody>`;
-    datos.forEach(f => h += `<tr><td>${new Date(f[0]).toLocaleDateString()}</td><td>${f[2]}</td><td>${f[3]}</td></tr>`);
-    div.innerHTML = h + "</tbody></table>";
-  }).obtenerHistorial(USUARIO.cedula);
-}
 
-function cerrarModal() { document.getElementById('modal-pedido').style.display = 'none'; }
+    const btn = document.getElementById('btn-enviar');
+    btn.disabled = true;
+    btn.innerHTML = "<i class='fa-solid fa-spinner fa-spin'></i> Enviando...";
+
+    google.script.run.withSuccessHandler(msg => {
+      alert(msg);
+      cerrarModal();
+      cargarHistorial();
+    }).guardarPedidoMasivo(CARRITO, USUARIO);
+  }
+
+  function cargarHistorial() {
+    const div = document.getElementById('render-historial');
+    div.innerHTML = "<center><i class='fa-solid fa-spinner fa-spin'></i></center>";
+    google.script.run.withSuccessHandler(datos => {
+      if (datos.length === 0) {
+        div.innerHTML = `<div class="vacio-estilo"><i class="fa-solid fa-box-open" style="font-size:40px; color:#ccc"></i><p>No hay solicitudes previas</p></div>`;
+        return;
+      }
+      let h = `<table class="table-res"><thead><tr><th>Fecha</th><th>Prenda</th><th>Talla</th></tr></thead><tbody>`;
+      datos.forEach(f => h += `<tr><td>${new Date(f[0]).toLocaleDateString()}</td><td>${f[2]}</td><td>${f[3]}</td></tr>`);
+      div.innerHTML = h + "</tbody></table>";
+    }).obtenerHistorial(USUARIO.cedula);
+  }
+
+  function cerrarSesion() {
+    USUARIO = null;
+    CARRITO = [];
+
+    document.getElementById('input-cedula').value = '';
+
+    document.getElementById('pantalla-principal').style.display = 'none';
+    document.getElementById('pantalla-login').style.display = 'block';
+
+    const msgLogin = document.getElementById('mensaje-login');
+    msgLogin.style.display = 'none';
+    msgLogin.innerHTML = '';
+
+    console.log("Sesión cerrada correctamente.");
+  }
+
+  function cerrarModal() { document.getElementById('modal-pedido').style.display = 'none'; }
 </script>

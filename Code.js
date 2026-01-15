@@ -5,7 +5,7 @@ const HOJA_SOLICITUD = "Solicitud";
 function doGet() {
   return HtmlService.createTemplateFromFile('Index')
     .evaluate()
-    .setTitle('Gestión de Uniformes')
+    .setTitle('Solicitud de Uniformes')
     .addMetaTag('viewport', 'width=device-width, initial-scale=1')
     .setXFrameOptionsMode(HtmlService.XFrameOptionsMode.ALLOWALL);
 }
@@ -16,17 +16,28 @@ function include(nombreArchivo) {
 
 function validarIngreso(cedula) {
   const ss = SpreadsheetApp.getActiveSpreadsheet();
-  const hoja = ss.getSheetByName(HOJA_MAESTRA);
-  const datos = hoja.getRange("A2:M" + hoja.getLastRow()).getValues();
-  const usuario = datos.find(f => String(f[0]) === String(cedula));
+  const hojaM = ss.getSheetByName(HOJA_MAESTRA);
+  const hojaS = ss.getSheetByName(HOJA_SOLICITUD);
+  const datosM = hojaM.getRange("A2:M" + hojaM.getLastRow()).getValues();
+  const usuario = datosM.find(f => String(f[0]) === String(cedula));
 
-  if (usuario) {
-    return {
-      cedula: usuario[0], nombre: usuario[1], sexo: usuario[2],
-      cargo: usuario[6], ceco: usuario[10], rol: usuario[12]
-    };
+  if (!usuario) return null;
+
+  let yaTieneSolicitud = false;
+  if (hojaS.getLastRow() >= 2) {
+    const datosS = hojaS.getRange("C2:C" + hojaS.getLastRow()).getValues();
+    yaTieneSolicitud = datosS.some(fila => String(fila[0]) === String(cedula));
   }
-  return null;
+
+  return {
+    cedula: usuario[0],
+    nombre: usuario[1],
+    sexo: usuario[2],
+    cargo: usuario[6],
+    ceco: usuario[10],
+    rol: usuario[12],
+    haSolicitado: yaTieneSolicitud
+  };
 }
 
 function obtenerUniformesPorRol(sexo, rol) {
@@ -46,7 +57,10 @@ function obtenerTallasPorUniforme(prenda) {
 
 function obtenerCodigoUniforme(prenda, talla) {
   const datos = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(HOJA_INVENTARIO).getDataRange().getValues();
-  const fila = datos.find(f => f[2] === prenda && f[3] === talla);
+  const fila = datos.find(f => f[2] == prenda && f[3] == talla);
+  console.log(fila)
+  Logger.log(prenda)
+  Logger.log(talla)
   return fila ? fila[0] : 'N/A';
 }
 
@@ -54,7 +68,7 @@ function guardarPedidoMasivo(carrito, user) {
   const ss = SpreadsheetApp.getActiveSpreadsheet();
   const hoja = ss.getSheetByName(HOJA_SOLICITUD);
   const fecha = new Date();
-  const correoUsuario = Session.getActiveUser().getEmail(); // Obtiene el correo de quien usa la App
+  const correoUsuario = Session.getActiveUser().getEmail();
 
   const filas = carrito.map(item => [
     fecha,
@@ -76,13 +90,9 @@ function guardarPedidoMasivo(carrito, user) {
   return "✅ ¡Pedido enviado con éxito! Se ha enviado un resumen a: " + correoUsuario;
 }
 
-/**
- * Función auxiliar para construir y enviar el email
- */
 function enviarCorreoConfirmacion(carrito, user, email, fecha) {
   const fechaTxt = Utilities.formatDate(fecha, Session.getScriptTimeZone(), "dd/MM/yyyy HH:mm");
 
-  // Construcción del diseño del correo en HTML
   let tablaArticulos = `
     <table style="border-collapse: collapse; width: 100%; font-family: sans-serif;">
       <thead>
@@ -125,9 +135,7 @@ function enviarCorreoConfirmacion(carrito, user, email, fecha) {
     </div>
   `;
 
-  // Envío del correo
   try {
-    // CAMBIO REALIZADO: MailApp -> GmailApp
     GmailApp.sendEmail(email, "Confirmación de Solicitud de Uniformes - " + user.nombre, "", {
       htmlBody: cuerpoHtml,
       name: "Uniformes CNCH"
